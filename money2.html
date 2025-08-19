@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Money Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      text-align: center;
+      margin: 10px 0;
+      color: #00ffcc;
+    }
+    #chartContainer {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+    }
+    canvas {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    #controls {
+      text-align: center;
+      margin: 10px;
+    }
+    button {
+      background: #00ffcc;
+      color: #121212;
+      border: none;
+      padding: 8px 15px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #00cca3;
+    }
+  </style>
+</head>
+<body>
+  <h1>💰 Money Tracker</h1>
+  <div id="chartContainer">
+    <canvas id="moneyChart"></canvas>
+  </div>
+  <div id="controls">
+    <button onclick="resetZoom()">Reset Zoom</button>
+  </div>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzFCHlANStZYesQgam45-KV9e_zZ8G80wsOAgeKwTFb6BkM2lNsgWqpcT6dQY6WdJCc/exec"; // Replace with your Google Apps Script Web App URL
+
+    async function fetchData() {
+      const res = await fetch(scriptURL);
+      const data = await res.json();
+
+      // Format data
+      return data.map(row => ({
+        date: row[0],
+        credit: parseFloat(row[1]) || 0,
+        debit: parseFloat(row[2]) || 0,
+        balance: parseFloat(row[3]) || 0
+      }));
+    }
+
+    async function renderChart() {
+      const data = await fetchData();
+      const ctx = document.getElementById("moneyChart").getContext("2d");
+
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [
+            {
+              label: "Balance",
+              data: data.map(d => d.balance),
+              borderColor: "#00ffcc",
+              backgroundColor: "rgba(0, 255, 204, 0.2)",
+              borderWidth: 2,
+              pointRadius: 3,
+              pointBackgroundColor: "#00ffcc",
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: "Credit",
+              data: data.map(d => d.credit),
+              borderColor: "#00ff00",
+              backgroundColor: "rgba(0, 255, 0, 0.2)",
+              borderWidth: 1,
+              pointRadius: 2,
+              hidden: true
+            },
+            {
+              label: "Debit",
+              data: data.map(d => d.debit),
+              borderColor: "#ff4444",
+              backgroundColor: "rgba(255, 68, 68, 0.2)",
+              borderWidth: 1,
+              pointRadius: 2,
+              hidden: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: "#fff" }
+            },
+            zoom: {
+              pan: { enabled: true, mode: "x" },
+              zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" }
+            }
+          },
+          scales: {
+            x: {
+              type: "time",
+              time: { unit: "day" },
+              ticks: { color: "#ccc" },
+              grid: { color: "#333" }
+            },
+            y: {
+              ticks: { color: "#ccc" },
+              grid: { color: "#333" }
+            }
+          }
+        }
+      });
+    }
+
+    function resetZoom() {
+      Chart.instances[0].resetZoom();
+    }
+
+    renderChart();
+  </script>
+</body>
+</html>
